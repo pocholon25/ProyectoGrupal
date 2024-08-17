@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.rounded.Menu
@@ -53,8 +54,8 @@ fun AppTopBar(
             }
             IconButton(onClick = onAction1Click) {
                 Icon(
-                    imageVector = Icons.Filled.ExitToApp,
-                    contentDescription = "",
+                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                    contentDescription = "Salir de la aplicacion",
                     tint = Color.White,
                     modifier = Modifier.size(30.dp)
                 )

@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import pe.idat.androidproyecto.route.Rutas
+import pe.idat.androidproyecto.viewhome.RowEmail
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
@@ -78,4 +79,9 @@ fun RecuperarScreen(navController: NavController){
     }
 
 
+}
+
+@Composable
+fun RowButtonRegistrar(isValidForm: Boolean, text: String) {
+    TODO("Not yet implemented")
 }

@@ -7,6 +7,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -15,14 +18,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import pe.idat.androidproyecto.AuthViewModel
 import pe.idat.androidproyecto.R
+import pe.idat.androidproyecto.data.network.response.ClienteRequest
 import pe.idat.androidproyecto.route.Rutas
+import pe.idat.androidproyecto.viewhome.RowEmail
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
-fun RegistrarScreen(navController: NavController) {
+fun RegistrarScreen(navController: NavController, authViewModel: AuthViewModel) {
     var nombre by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var isValidEmail by rememberSaveable { mutableStateOf(false) }
@@ -34,9 +42,16 @@ fun RegistrarScreen(navController: NavController) {
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
+    var passwordError by rememberSaveable { mutableStateOf<String?>(null) }
+    var confirmPasswordError by rememberSaveable { mutableStateOf<String?>(null) }
+
     val isFormValid by derivedStateOf {
         nombre.isNotEmpty() && isValidEmail && celular.isNotEmpty() && isValidPassword && password == confirmPassword
     }
+
+    val clienteResponse by authViewModel.clienteResponse.collectAsState()
+    val registerError by authViewModel.registerError.collectAsState()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -62,31 +77,45 @@ fun RegistrarScreen(navController: NavController) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                   RowImage()
+                    RowImage()
                     Text(
                         text = "Registrate",
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.padding(top = 2.dp, bottom = 2.dp)
                     )
-                    RowUsuario(usuario = nombre, usuarioChange = { nombre = it }, isValid = nombre.length >= 2, label = "Nombre", keyboardType = KeyboardType.Text)
+                    RowUsuario(
+                        usuario = nombre,
+                        usuarioChange = { nombre = it },
+                        isValid = nombre.length >= 5,
+                        label = "Nombre",
+                        keyboardType = KeyboardType.Text
+                    )
 
                     RowEmail(email = email, emailChange = {
                         email = it
                         isValidEmail = Patterns.EMAIL_ADDRESS.matcher(email).matches()
                     }, isValidEmail)
 
-                    RowUsuario(usuario = celular, usuarioChange = { celular = it }, isValid = celular.length >= 9, label = "Celular", keyboardType = KeyboardType.Phone)
-
+                    RowUsuario(
+                        usuario = celular,
+                        usuarioChange = { celular = it },
+                        isValid = celular.length >= 9,
+                        label = "Celular",
+                        keyboardType = KeyboardType.Phone
+                    )
 
                     RowPassword(
                         contrasena = password,
                         passwordChange = {
                             password = it
                             isValidPassword = password.length >= 5
+                            passwordError = if (!isValidPassword) "La contraseña debe tener al menos 5 caracteres" else null
+                            confirmPasswordError = if (confirmPassword.isNotEmpty() && confirmPassword != password) "Las contraseñas no coinciden" else null
                         },
                         passwordVisible = passwordVisible,
                         passwordVisibleChange = { passwordVisible = !passwordVisible },
-                        isValidPassword = isValidPassword
+                        isValidPassword = isValidPassword,
+                        errorMessage = passwordError
                     )
 
                     RowPassword(
@@ -94,13 +123,61 @@ fun RegistrarScreen(navController: NavController) {
                         passwordChange = {
                             confirmPassword = it
                             isValidConfirmPassword = confirmPassword.length >= 5 && confirmPassword == password
+                            confirmPasswordError = if (!isValidConfirmPassword) "Las contraseñas no coinciden" else null
                         },
                         passwordVisible = confirmPasswordVisible,
                         passwordVisibleChange = { confirmPasswordVisible = !confirmPasswordVisible },
-                        isValidPassword = isValidConfirmPassword
+                        isValidPassword = isValidConfirmPassword,
+                        errorMessage = confirmPasswordError
                     )
+                    @Composable
+                    fun RowButtonRegistrar(isEnabled: Boolean, text: String, onClick: () -> Unit) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Button(
+                                onClick = onClick,
+                                enabled = isEnabled,
+                                shape = RoundedCornerShape(50.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5E72AF))
+                            ) {
+                                Text(text = text, color = Color.White)
+                            }
+                        }
+                    }
 
-                    RowButtonRegistrar(isValidForm = isFormValid, text = "Registrar")
+                    RowButtonRegistrar(isFormValid, text = "Registrar") {
+                        authViewModel.registerClient(
+                            ClienteRequest(
+                                nombre = nombre,
+                                email = email,
+                                celular = celular,
+                                password = password
+                            )
+                        )
+                    }
+
+                    registerError?.let { error ->
+                        Text(
+                            text = error,
+                            color = Color.Red,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+
+                    clienteResponse?.let { cliente ->
+                        Text(
+                            text = "Registro exitoso: ${cliente.nombre}",
+                            color = Color.Blue,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                        LaunchedEffect(cliente) {
+                            navController.navigate(Rutas.Login.ruta)
+                        }
+                    }
 
                     TextButton(
                         onClick = { navController.navigate(Rutas.Login.ruta) }
@@ -114,47 +191,52 @@ fun RegistrarScreen(navController: NavController) {
 }
 
 @Composable
-fun RowEmail(email: String, emailChange: (String) -> Unit, isValid: Boolean) {
+fun RowPassword(
+    contrasena: String,
+    passwordChange: (String) -> Unit,
+    passwordVisible: Boolean,
+    passwordVisibleChange: () -> Unit,
+    isValidPassword: Boolean,
+    errorMessage: String? = null
+) {
     Row(
         Modifier
             .fillMaxWidth()
             .padding(10.dp), horizontalArrangement = Arrangement.Center
     ) {
         val colors = OutlinedTextFieldDefaults.colors(
-            focusedLabelColor = if (isValid) Color.Green else Color.Red,
+            focusedLabelColor = if (isValidPassword) Color.Green else Color.Red,
             unfocusedLabelColor = Color(0xFF5E72AF),
-            focusedBorderColor = if (isValid) Color.Green else Color.Red,
+            focusedBorderColor = if (isValidPassword) Color.Green else Color.Red,
             unfocusedBorderColor = Color(0xFF5E72AF),
             errorBorderColor = Color.Red
         )
 
         OutlinedTextField(
-            value = email,
-            onValueChange = emailChange,
-            label = { Text(text = "Email") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+            value = contrasena,
+            onValueChange = passwordChange,
+            label = { Text(text = "Contraseña") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             maxLines = 1,
             singleLine = true,
+            trailingIcon = {
+                IconButton(onClick = passwordVisibleChange) {
+                    val visibilityIcon = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                    Icon(visibilityIcon, contentDescription = null)
+                }
+            },
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             colors = colors,
-            isError = !isValid && email.isNotEmpty()
+            isError = !isValidPassword || errorMessage != null
         )
     }
-}
 
-@Composable
-fun RowButtonRegistrar(isValidForm: Boolean,text:String) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(10.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { /* Handle sign up */ },
-            enabled = isValidForm
-        ) {
-            Text(text = text)
-        }
+    errorMessage?.let {
+        Text(
+            text = it,
+            color = Color.Red,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+        )
     }
 }

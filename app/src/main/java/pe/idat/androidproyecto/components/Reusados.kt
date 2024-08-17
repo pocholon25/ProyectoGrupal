@@ -36,6 +36,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
+import coil.compose.rememberImagePainter
 import pe.idat.androidproyecto.R
 
 @Composable
@@ -61,7 +63,7 @@ fun <T> LazyGrid(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(columns),
-        contentPadding = PaddingValues(2.dp),
+        contentPadding = PaddingValues(4.dp), // Ajustar padding entre items
         modifier = modifier
     ) {
         items(items) { item ->
@@ -74,11 +76,13 @@ fun <T> LazyGrid(
 fun <T> ItemCard(
     item: T,
     modifier: Modifier = Modifier,
-    imageRes: Int,
+    imageRes: String,
     title: String,
+    description: String,
     price: String,
     iconContentDescription: String? = null,
-    onIconClick: (() -> Unit)? = null
+    onIconClick: (() -> Unit)? = null,
+    onAddToCartClick: (() -> Unit)? = null
 ) {
     Card(
         modifier = modifier
@@ -96,15 +100,17 @@ fun <T> ItemCard(
             modifier = Modifier.padding(8.dp)
         ) {
             Image(
-                painter = painterResource(id = imageRes),
+                painter = rememberAsyncImagePainter(model = imageRes),
                 contentDescription = title,
                 modifier = Modifier
                     .height(150.dp)
                     .fillMaxWidth(),
                 contentScale = ContentScale.Crop
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(text = title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = description, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             Spacer(modifier = Modifier.height(4.dp))
             Box(
                 modifier = Modifier
@@ -134,6 +140,7 @@ fun <T> ItemCard(
                             .size(24.dp)
                             .border(2.dp, Color.Blue, shape = CircleShape)
                             .padding(3.dp)
+                            .clickable { onAddToCartClick?.invoke() }
                     )
                 }
             }

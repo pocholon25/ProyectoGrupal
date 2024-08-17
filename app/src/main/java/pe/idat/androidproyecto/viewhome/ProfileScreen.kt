@@ -23,15 +23,20 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import pe.idat.androidproyecto.AuthViewModel
 import pe.idat.androidproyecto.R
+import pe.idat.androidproyecto.data.network.request.ClienteUpdate
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
-fun ProfileScreen(navController: NavController) {
-    var nombre by rememberSaveable { mutableStateOf("Juan Pérez") }
-    var email by rememberSaveable { mutableStateOf("juan.perez@example.com") }
-    var celular by rememberSaveable { mutableStateOf("987654321") }
-    var password by rememberSaveable { mutableStateOf("") }
+fun ProfileScreen(navController: NavController, authViewModel: AuthViewModel) {
+    val loginResponse by authViewModel.loginResponse.collectAsState()
+    val updateMessage by authViewModel.updateMessage.collectAsState()
+
+    var nombre by rememberSaveable { mutableStateOf(loginResponse?.nombre ?: "") }
+    var email by rememberSaveable { mutableStateOf(loginResponse?.email ?: "") }
+    var celular by rememberSaveable { mutableStateOf(loginResponse?.celular ?: "") }
+    var password by rememberSaveable { mutableStateOf(loginResponse?.password ?: "") }
     var confirmPassword by rememberSaveable { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
@@ -41,7 +46,8 @@ fun ProfileScreen(navController: NavController) {
     val isCelularValid = celular.length >= 9
     val isPasswordValid = password.length >= 5
     val isConfirmPasswordValid = confirmPassword == password
-    val isFormValid = isNombreValid && isEmailValid && isCelularValid && isPasswordValid && isConfirmPasswordValid
+    val isFormValid =
+        isNombreValid && isEmailValid && isCelularValid && isPasswordValid && isConfirmPasswordValid
 
     Box(
         modifier = Modifier
@@ -58,7 +64,7 @@ fun ProfileScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
-                painter = painterResource(R.drawable.descarga),
+                painter = painterResource(R.drawable.per),
                 contentDescription = "Profile Picture",
                 modifier = Modifier
                     .size(100.dp)
@@ -71,11 +77,23 @@ fun ProfileScreen(navController: NavController) {
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(top = 2.dp, bottom = 2.dp)
             )
-            RowUsuario(usuario = nombre, usuarioChange = { nombre = it }, isValid = isNombreValid, label = "Nombre", keyboardType = KeyboardType.Text)
+            RowUsuario(
+                usuario = nombre,
+                usuarioChange = { nombre = it },
+                isValid = isNombreValid,
+                label = "Nombre",
+                keyboardType = KeyboardType.Text
+            )
             RowEmail(email = email, emailChange = {
                 email = it
             }, isValid = isEmailValid)
-            RowUsuario(usuario = celular, usuarioChange = { celular = it }, isValid = isCelularValid, label = "Celular", keyboardType = KeyboardType.Phone)
+            RowUsuario(
+                usuario = celular,
+                usuarioChange = { celular = it },
+                isValid = isCelularValid,
+                label = "Celular",
+                keyboardType = KeyboardType.Phone
+            )
             RowPassword(
                 contrasena = password,
                 passwordChange = {
@@ -96,7 +114,20 @@ fun ProfileScreen(navController: NavController) {
                 isValidPassword = isConfirmPasswordValid
             )
 
-            RowButtonActualizar(isValidForm = isFormValid, text = "Actualizar")
+            RowButtonActualizar(
+                isValidForm = isFormValid,
+                text = "Actualizar",
+                onClick = {
+                    val clienteUpdate = ClienteUpdate(nombre, email, celular, password)
+                    loginResponse?.idcliente?.let { id ->
+                        authViewModel.updateCliente(id, clienteUpdate)
+                    }
+                }
+            )
+            updateMessage?.let { responseMessage ->
+                val color = Color.Blue
+                Text(text = responseMessage.message, color = color)
+            }
         }
     }
 }
@@ -130,7 +161,13 @@ fun RowEmail(email: String, emailChange: (String) -> Unit, isValid: Boolean) {
 }
 
 @Composable
-fun RowUsuario(usuario: String, usuarioChange: (String) -> Unit, isValid: Boolean, label: String, keyboardType: KeyboardType) {
+fun RowUsuario(
+    usuario: String,
+    usuarioChange: (String) -> Unit,
+    isValid: Boolean,
+    label: String,
+    keyboardType: KeyboardType
+) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -201,7 +238,7 @@ fun RowPassword(
 }
 
 @Composable
-fun RowButtonActualizar(isValidForm: Boolean, text: String) {
+fun RowButtonActualizar(isValidForm: Boolean, text: String, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -210,7 +247,7 @@ fun RowButtonActualizar(isValidForm: Boolean, text: String) {
     ) {
         Button(
             modifier = Modifier.fillMaxWidth(),
-            onClick = { /* Handle update */ },
+            onClick = onClick,
             enabled = isValidForm
         ) {
             Text(text = text)

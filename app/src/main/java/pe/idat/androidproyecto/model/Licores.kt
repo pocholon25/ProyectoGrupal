@@ -10,7 +10,7 @@ data class Producto(
     @DrawableRes val imageRes: Int)
 val productos = listOf(
     Producto(1, "Johnnie Walker Red", "S/ 180.00", R.drawable.licor10),
-    Producto(2, "Jack Daniel's", "S/ 220.00", R.drawable.licor9),
+    Producto(2, "Jack Daniel's", "S/ 220.00", R.drawable.licor1),
     Producto(3, "Bacardi Superior", "S/ 130.00", R.drawable.licor8),
     Producto(4, "Absolut Vodka", "S/ 170.00", R.drawable.licor7),
     Producto(5, "Jose Cuervo", "S/ 150.00", R.drawable.licor1),

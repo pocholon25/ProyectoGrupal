@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import pe.idat.androidproyecto.AuthViewModel
 import pe.idat.androidproyecto.R
 import pe.idat.androidproyecto.model.Producto
 import pe.idat.androidproyecto.model.items
@@ -37,7 +38,7 @@ import pe.idat.androidproyecto.model.promosList
 import pe.idat.androidproyecto.route.Rutas
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(navController: NavController, authViewModel: AuthViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()

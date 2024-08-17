@@ -28,6 +28,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -57,13 +59,24 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel) {
     var isValidPassword by rememberSaveable { mutableStateOf(false) }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
-    // Observa LiveData del ViewModel
-    val usuarioLiveData by authViewModel.usuario.observeAsState("")
-    val passwordLiveData by authViewModel.password.observeAsState("")
+    // Observa los cambios en el estado del ViewModel
+    val loginError by authViewModel.loginError.collectAsState()
+    val loginResponse by authViewModel.loginResponse.collectAsState()
 
-    // Actualiza las variables cuando LiveData cambie
-    LaunchedEffect(usuarioLiveData) { usuario = usuarioLiveData }
-    LaunchedEffect(passwordLiveData) { password = passwordLiveData }
+    // Mostrar el Toast solo si hay un error de login
+    LaunchedEffect(loginError) {
+        loginError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    LaunchedEffect(loginResponse) {
+        loginResponse?.let {
+            navController.navigate(Rutas.Home.ruta) {
+                popUpTo(Rutas.Login.ruta) { inclusive = true }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -85,18 +98,17 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel) {
                     RowImage()
                     RowUsuario(usuario = usuario, usuarioChange = { newUsuario ->
                         usuario = newUsuario
-                        authViewModel.onLoginTextChanged(usuario, password)
                         isValidUsuario = newUsuario.length >= 5
                     }, isValid = isValidUsuario, label = "Usuario", keyboardType = KeyboardType.Text)
                     RowPassword(contrasena = password, passwordChange = { newPassword ->
                         password = newPassword
-                        authViewModel.onLoginTextChanged(usuario, password)
                         isValidPassword = newPassword.length >= 5
                     }, passwordVisible = passwordVisible, passwordVisibleChange = { passwordVisible = !passwordVisible }, isValidPassword = isValidPassword)
                     RowButtonLogin(
                         context = context,
-                        navController,
-                        authViewModel,
+                        authViewModel = authViewModel,
+                        usuario = usuario,
+                        password = password,
                         isValidEmail = isValidUsuario,
                         isValidPassword = isValidPassword
                     )
@@ -109,29 +121,29 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel) {
                             onClick = { navController.navigate(Rutas.Recuperar.ruta) },
                             modifier = Modifier
                                 .padding(bottom = 8.dp)
-                                .fillMaxWidth(),
-                            content = {
-                                Text(text = "Olvidaste tu contraseña?")
-                            }
-                        )
+                                .fillMaxWidth()
+                        ) {
+                            Text(text = "Olvidaste tu contraseña?")
+                        }
                         TextButton(
                             onClick = { navController.navigate(Rutas.Registrar.ruta) },
-                            modifier = Modifier.fillMaxWidth(),
-                            content = {
-                                Text(text = "Registrate aquí")
-                            }
-                        )
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = "Registrate aquí")
+                        }
                     }
                 }
             }
         }
     }
 }
+
 @Composable
 fun RowButtonLogin(
     context: Context,
-    navController: NavController,
     authViewModel: AuthViewModel,
+    usuario: String,
+    password: String,
     isValidEmail: Boolean,
     isValidPassword: Boolean
 ) {
@@ -141,20 +153,21 @@ fun RowButtonLogin(
             .padding(10.dp),
         horizontalArrangement = Arrangement.Center
     ) {
-        Button(modifier = Modifier.fillMaxWidth(), onClick = {
-                                                             if (authViewModel.autenticar()){
-                                                                 navController.navigate(Rutas.Home.ruta){
-                                                                     popUpTo(Rutas.Login.ruta){inclusive=true}
-                                                                 }
-                                                             }else{
-                                                                 Toast.makeText(context, "Usuario y / o Contraseña incorrectos",Toast.LENGTH_LONG).show()
-                                                             }
-        },
-            enabled = isValidPassword && isValidEmail) {
+        Button(
+            onClick = {
+                if (isValidEmail && isValidPassword) {
+                    authViewModel.login(usuario, password)
+                } else {
+                    Toast.makeText(context, "Usuario y/o Contraseña incorrectos", Toast.LENGTH_LONG).show()
+                }
+            },
+            enabled = isValidEmail && isValidPassword
+        ) {
             Text(text = "Iniciar Sesion")
         }
     }
 }
+
 
 @Composable
 fun RowPassword(

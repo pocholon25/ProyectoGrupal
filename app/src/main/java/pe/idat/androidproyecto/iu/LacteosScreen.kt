@@ -1,10 +1,9 @@
-package pe.idat.androidproyecto.categorias
+package pe.idat.androidproyecto.iu
+
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,28 +12,37 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import pe.idat.androidproyecto.AuthViewModel
 import pe.idat.androidproyecto.components.ItemCard
 import pe.idat.androidproyecto.components.LazyGrid
-import pe.idat.androidproyecto.model.promo
+import pe.idat.androidproyecto.model.Compra
+import pe.idat.androidproyecto.route.Rutas
 
 @Composable
-fun LicoresScreen(navController: NavController) {
+fun LacteosScreen(navController: NavController, viewModel: AuthViewModel) {
+    val productos by viewModel.productos.collectAsState(emptyList())
+    LaunchedEffect(Unit) {
+        viewModel.productsByCategory("Lacteos")
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = 8.dp), // Padding tenue para separar de los lados de la pantalla
+            .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.Top
     ) {
         Text(
-            text = "LICORES",
+            text = "LÁCTEOS",
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 16.dp), // Padding vertical para el texto
@@ -45,19 +53,33 @@ fun LicoresScreen(navController: NavController) {
         )
         Spacer(modifier = Modifier.height(8.dp)) // Espacio entre el texto y la lista
         LazyGrid(
-            items = promo,
+            items = productos,
             columns = 2,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 4.dp) // Padding tenue para separar de los lados de la pantalla
-        ) { promo ->
+        ) { producto ->
+            val fullimageUrl = "http://10.0.2.2:8089/img/product_img/${producto.image}"
             ItemCard(
-                item = promo,
-                imageRes = promo.imageRes,
-                title = promo.title,
-                price = promo.price,
-                iconContentDescription = "Promoción",
-                onIconClick = { /* Acción al hacer clic en el icono */ }
+                item = producto,
+                imageRes = fullimageUrl,
+                title = producto.nombre,
+                description = producto.descripcion,
+                price = "S/${producto.precio}",
+                iconContentDescription = "Lacteos",
+                onIconClick = { /* Acción al hacer clic en el icono */ },
+                onAddToCartClick = {
+                    viewModel.addToCart(
+                        Compra(
+                            nombreProducto = producto.nombre,
+                            cantidad = 1,
+                            precio = producto.precio,
+                            imagenUrl = fullimageUrl,
+                            id = producto.id.toLong()
+                        )
+                    )
+                    navController.navigate(Rutas.Carrito.ruta)
+                }
             )
         }
     }
