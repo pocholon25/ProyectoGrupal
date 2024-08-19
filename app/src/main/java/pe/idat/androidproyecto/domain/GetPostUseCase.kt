@@ -6,6 +6,7 @@ import pe.idat.androidproyecto.data.network.request.LoginRequest
 import pe.idat.androidproyecto.data.network.request.VentaRequest
 import pe.idat.androidproyecto.data.network.response.ClienteRequest
 import pe.idat.androidproyecto.data.network.response.LoginResponse
+import pe.idat.androidproyecto.data.network.response.PedidoResponse
 import pe.idat.androidproyecto.data.network.response.ProductoResponse
 import pe.idat.androidproyecto.data.network.response.ResponseMessage
 import pe.idat.androidproyecto.data.network.response.VentaResponse
@@ -31,5 +32,9 @@ class GetPostUseCase @Inject constructor(private val postRepository: PostReposit
 
     suspend operator fun invoke(ventaRequest: VentaRequest): VentaResponse? {
         return postRepository.registrarVenta(ventaRequest)
+    }
+
+    suspend fun getPedidoPorIdVenta(idVenta: Long): PedidoResponse? {
+        return postRepository.obtenerPedidoPorIdVenta(idVenta)
     }
 }

@@ -9,6 +9,7 @@ import pe.idat.androidproyecto.data.network.request.LoginRequest
 import pe.idat.androidproyecto.data.network.request.VentaRequest
 import pe.idat.androidproyecto.data.network.response.ClienteRequest
 import pe.idat.androidproyecto.data.network.response.LoginResponse
+import pe.idat.androidproyecto.data.network.response.PedidoResponse
 import pe.idat.androidproyecto.data.network.response.ProductoResponse
 import pe.idat.androidproyecto.data.network.response.ResponseMessage
 import pe.idat.androidproyecto.data.network.response.VentaResponse
@@ -113,6 +114,21 @@ class PostService @Inject constructor(private val retrofitClient: RetrofitClient
             }
         }
     }
+    suspend fun obtenerPedidoPorIdVenta(idVenta: Long): PedidoResponse? {
+        return withContext(Dispatchers.IO) {
+            try {
+                Log.d("PostService", "Enviando solicitud para obtener pedido por idVenta: $idVenta")
+                val response = retrofitClient.obtenerPedidoPorIdVenta(idVenta)
+                Log.d("PostService", "Respuesta de pedido: ${response.toString()}")
+                response
+            } catch (e: Exception) {
+                Log.e("PostService", "Error al obtener el pedido por idVenta: ${e.message}")
+                e.printStackTrace()
+                null
+            }
+        }
+    }
+
 }
 
 

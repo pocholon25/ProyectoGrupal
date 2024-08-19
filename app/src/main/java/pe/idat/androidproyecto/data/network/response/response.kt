@@ -5,7 +5,8 @@ data class VentaResponse(
     val cliente: ClienteRespons,
     val fecha: String,
     val importe: Double,
-    val detalleVenta: List<DetalleVentaResponse>
+    val detalleVenta: List<DetalleVentaResponse>,
+    val estadoPedido: String
 )
 
 data class ClienteRespons(

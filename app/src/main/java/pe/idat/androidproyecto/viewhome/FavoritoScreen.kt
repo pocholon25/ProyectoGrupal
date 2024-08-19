@@ -35,7 +35,7 @@ import pe.idat.androidproyecto.route.Rutas
 fun FavoriteScreen(navController: NavController, viewModel: AuthViewModel) {
     val productos by viewModel.productos.collectAsState()
     LaunchedEffect(Unit) {
-        viewModel.productsByCategory("Lacteos")
+        viewModel.productsByCategory("Favoritos")
     }
     Column(
         modifier = Modifier
@@ -45,22 +45,22 @@ fun FavoriteScreen(navController: NavController, viewModel: AuthViewModel) {
         verticalArrangement = Arrangement.Top
     ) {
         Text(
-            text = "LÁCTEOS",
+            text = "TUS FAVORITOS",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp), // Padding vertical para el texto
+                .padding(vertical = 16.dp),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.SansSerif,
             color = Color.Black
         )
-        Spacer(modifier = Modifier.height(8.dp)) // Espacio entre el texto y la lista
+        Spacer(modifier = Modifier.height(8.dp))
         LazyGrid(
             items = productos,
             columns = 2,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp) // Padding tenue para separar de los lados de la pantalla
+                .padding(horizontal = 4.dp)
         ) { producto ->
             val fullimageUrl = "http://10.0.2.2:8089/img/product_img/${producto.image}"
             ItemCard(

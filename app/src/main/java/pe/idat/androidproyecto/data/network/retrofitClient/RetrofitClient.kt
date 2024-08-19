@@ -6,6 +6,7 @@ import pe.idat.androidproyecto.data.network.request.LoginRequest
 import pe.idat.androidproyecto.data.network.request.VentaRequest
 import pe.idat.androidproyecto.data.network.response.ClienteRequest
 import pe.idat.androidproyecto.data.network.response.LoginResponse
+import pe.idat.androidproyecto.data.network.response.PedidoResponse
 import pe.idat.androidproyecto.data.network.response.ProductoResponse
 import pe.idat.androidproyecto.data.network.response.ResponseMessage
 import pe.idat.androidproyecto.data.network.response.VentaResponse
@@ -34,4 +35,7 @@ interface RetrofitClient {
 
     @POST("venta")
     suspend fun registrarVenta(@Body ventaRequest: VentaRequest): Response<VentaResponse>
+
+    @GET("api/pedidos/venta/{idVenta}")
+    suspend fun obtenerPedidoPorIdVenta(@Path("idVenta") idVenta: Long): PedidoResponse
     }

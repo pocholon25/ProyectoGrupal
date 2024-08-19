@@ -1,6 +1,8 @@
 package pe.idat.androidproyecto
 
 import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,6 +21,7 @@ import pe.idat.androidproyecto.data.network.request.Producto
 import pe.idat.androidproyecto.data.network.request.VentaRequest
 import pe.idat.androidproyecto.data.network.response.ClienteRequest
 import pe.idat.androidproyecto.data.network.response.LoginResponse
+import pe.idat.androidproyecto.data.network.response.PedidoResponse
 import pe.idat.androidproyecto.data.network.response.ProductoResponse
 import pe.idat.androidproyecto.data.network.response.ResponseMessage
 import pe.idat.androidproyecto.data.network.response.VentaResponse
@@ -34,6 +37,14 @@ class AuthViewModel @Inject constructor(
     private val getPostUseCase: GetPostUseCase
 ) : ViewModel() {
 
+    private val _pedidoResponse = MutableLiveData<PedidoResponse?>()
+    val pedidoResponse: LiveData<PedidoResponse?> get() = _pedidoResponse
+
+    private val _estadoPedido = MutableLiveData<String?>()
+    val estadoPedido: LiveData<String?> get() = _estadoPedido
+
+    private val _clienteActual = MutableLiveData<Cliente?>()
+    val clienteActual: LiveData<Cliente?> get() = _clienteActual
 
     private val _compraList = MutableStateFlow<List<Compra>>(emptyList())
     val compraList: StateFlow<List<Compra>> get() = _compraList
@@ -76,7 +87,24 @@ class AuthViewModel @Inject constructor(
     private val _ventaError = MutableStateFlow<String?>(null)
     val ventaError: StateFlow<String?> get() = _ventaError
 
+    fun logout() {
+        viewModelScope.launch {
+            try {
+                _loginResponse.value = null
+                _compraList.value = emptyList()
+                _clienteResponse.value = null
+                _productos.value = emptyList()
+                _ventaResponse.value = null
+                _usuario.value = ""
+                _password.value = ""
 
+                Log.d("AuthViewModel", "Logout successful")
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Error during logout: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
 
 
     fun productsByCategory(categoria: String) {
@@ -118,6 +146,7 @@ class AuthViewModel @Inject constructor(
                 if (response != null) {
                     _loginResponse.value = response
                     _loginError.value = null
+                    _clienteActual.value = Cliente(idcliente = response.idcliente)
                 } else {
                     _loginError.value = "Usuario y/o Contraseña incorrectos"
                 }
@@ -135,12 +164,12 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = getPostUseCase.updateCliente(id, clienteUpdate)
                 if (response != null) {
-                    _updateMessage.value = ResponseMessage(message = response.message)
+                    _updateMessage.value = ResponseMessage(mensaje = response.mensaje)
                 } else {
-                    _updateMessage.value = ResponseMessage(message = "Error al actualizar el perfil")
+                    _updateMessage.value = ResponseMessage(mensaje = "Error al actualizar el perfil")
                 }
             } catch (e: Exception) {
-                _updateMessage.value = ResponseMessage(message = "Excepción: ${e.message}")
+                _updateMessage.value = ResponseMessage(mensaje = "Excepción: ${e.message}")
                 e.printStackTrace()
             }
         }
@@ -149,44 +178,42 @@ class AuthViewModel @Inject constructor(
     fun registrarVenta() {
         viewModelScope.launch {
             try {
-                val ventaRequest = createVentaRequest()
-                if (ventaRequest == null) {
+                val cliente = _clienteActual.value
+                if (cliente == null) {
                     _ventaError.value = "No se pudo crear la solicitud de venta: Cliente no logueado."
                     return@launch
                 }
+
+                val ventaRequest = createVentaRequest(cliente)
                 val response = getPostUseCase(ventaRequest)
                 if (response != null) {
                     _ventaResponse.value = response
                     _ventaError.value = null
                     Log.d("VentaResponse", "Venta registrada exitosamente: ${response.toString()}")
-                    println("Venta registrada exitosamente")
+
+                    // Verifica si la venta pertenece al cliente actual
+                    if (response.cliente.idcliente.toLong() == cliente.idcliente.toLong()) { // Conversión de Int a Long
+                        val estadoPedido = response.estadoPedido
+                        _estadoPedido.value = estadoPedido
+                    } else {
+                        _estadoPedido.value = null // Si el id no coincide, el estado se vuelve null
+                    }
                 } else {
                     _ventaError.value = "Error al registrar la venta"
-                    println("Error al registrar la venta: Response is null")
                 }
             } catch (e: Exception) {
                 _ventaError.value = "Excepción: ${e.message}"
-                println("Excepción: ${e.message}")
                 e.printStackTrace()
             }
         }
     }
 
 
-    fun createVentaRequest(): VentaRequest? {
-        val clienteId = loginResponse.value?.idcliente
-        if (clienteId == null) {
-            // Manejar el caso donde el idcliente es nulo
-            println("Error: El cliente no está logueado.")
-            return null // O maneja esto como sea necesario
-        }
-
-        val cliente = Cliente(idcliente = clienteId)
+    fun createVentaRequest(cliente: Cliente): VentaRequest {
         val fecha = getCurrentDate()
-
-        val detalleVenta = compraList.value.map { compra ->
+        val detalleVenta = _compraList.value.map { compra ->
             DetalleVenta(
-                producto = Producto(id = compra.id), // Aquí estamos usando el id del producto
+                producto = Producto(id = compra.id),
                 cantidad = compra.cantidad
             )
         }
@@ -197,7 +224,28 @@ class AuthViewModel @Inject constructor(
             detalleVenta = detalleVenta
         )
     }
-
+    fun obtenerEstadoPedidoPorIdVenta(idVenta: Long) {
+        viewModelScope.launch {
+            try {
+                println("Solicitando estado del pedido para la venta con ID: $idVenta")
+                val response = getPostUseCase.getPedidoPorIdVenta(idVenta)
+                if (response != null) {
+                    println("Estado del pedido recibido: ${response.estadoPedido}")
+                    _estadoPedido.value = response.estadoPedido
+                    _pedidoResponse.value = response // Almacenar el PedidoResponse completo
+                } else {
+                    println("No se encontró el pedido")
+                    _estadoPedido.value = "No se encontró el pedido"
+                    _pedidoResponse.value = null
+                }
+            } catch (e: Exception) {
+                println("Error al obtener el estado del pedido: ${e.message}")
+                _estadoPedido.value = "Error al obtener el estado del pedido"
+                _pedidoResponse.value = null
+                e.printStackTrace()
+            }
+        }
+    }
 
 
     fun getCurrentDate(): String {
@@ -225,6 +273,14 @@ class AuthViewModel @Inject constructor(
             if (it == compra) it.copy(cantidad = newQuantity) else it
         }
     }
+    fun resetPedidoState() {
+        _estadoPedido.value = null
+        _pedidoResponse.value = null
+    }
+
+    fun resetUpdateMessage() {
+        _updateMessage.value = null
+    }
 
     fun getTotal(): Double {
         return _compraList.value.sumOf { it.cantidad * it.precio }
@@ -234,3 +290,4 @@ class AuthViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
 
 }
+

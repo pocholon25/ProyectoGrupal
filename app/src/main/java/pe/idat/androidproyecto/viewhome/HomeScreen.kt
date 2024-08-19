@@ -17,6 +17,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +34,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import pe.idat.androidproyecto.AuthViewModel
 import pe.idat.androidproyecto.R
+import pe.idat.androidproyecto.components.ItemCard
+import pe.idat.androidproyecto.components.LazyGrid
+import pe.idat.androidproyecto.model.Compra
 import pe.idat.androidproyecto.model.Producto
 import pe.idat.androidproyecto.model.items
 import pe.idat.androidproyecto.model.productos
@@ -98,7 +104,7 @@ fun HomeScreen(navController: NavController, authViewModel: AuthViewModel) {
                 .padding(horizontal = 16.dp)
                 .border(border = BorderStroke(2.dp, color = Color(0xFF68ECE8)))
         ) {
-            ProductoList(productos = productos, modifier = Modifier.padding())
+            VariadosScreen(navController = navController, viewModel = authViewModel)
         }
     }
 }
@@ -198,77 +204,62 @@ fun ProductCardRow(imageRes: Int) {
 }
 
 @Composable
-fun ProductoList(productos: List<Producto>, modifier: Modifier = Modifier) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(2.dp),
-        modifier = modifier
-    ) {
-        items(productos) { producto ->
-            ProductoItem(producto = producto)
-        }
-    }
-}
+fun VariadosScreen(navController: NavController, viewModel: AuthViewModel) {
 
-@Composable
-fun ProductoItem(producto: Producto) {
-    Card(
+    val productos by viewModel.productos.collectAsState(emptyList())
+
+    // Cargar los productos de la categoría "Variados"
+    LaunchedEffect(Unit) {
+        viewModel.productsByCategory("Variados")
+    }
+
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(4.dp)
-            .border(
-                width = 2.dp,
-                color = Color(0xFF92BBBA),
-                shape = RectangleShape
-            ),
-        colors = CardDefaults.cardColors(Color.White)
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(horizontal = 8.dp), // Padding tenue para separar de los lados de la pantalla
+        verticalArrangement = Arrangement.Top
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Image(
-                painter = painterResource(id = producto.imageRes),
-                contentDescription = producto.title,
-                modifier = Modifier
-                    .height(150.dp)
-                    .fillMaxWidth(),
-                contentScale = ContentScale.Crop
-            )
-            Spacer(modifier = (Modifier.height(8.dp)))
-            Text(text = producto.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Spacer(modifier = (Modifier.height(4.dp)))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = producto.price,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 14.sp,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                )
-                Row(modifier = Modifier.align(Alignment.BottomEnd)) {
-                    Icon(
-                        Icons.Filled.Favorite,
-                        contentDescription = null,
-                        tint = Color.Red,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .padding(end = 8.dp)
+        Text(
+            text = "VARIADOS",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp), // Padding vertical para el texto
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.SansSerif,
+            color = Color.Black
+        )
+        Spacer(modifier = Modifier.height(8.dp)) // Espacio entre el texto y la lista
+        LazyGrid(
+            items = productos,
+            columns = 2,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp) // Padding tenue para separar de los lados de la pantalla
+        ) { producto ->
+            val fullImageUrl = "http://10.0.2.2:8089/img/product_img/${producto.image}"
+            ItemCard(
+                item = productos,
+                imageRes = fullImageUrl,
+                title = producto.nombre,
+                description = producto.descripcion,
+                price = "S/${producto.precio}",
+                iconContentDescription = "Promoción",
+                onIconClick = { /* Acción  */ },
+                onAddToCartClick = {
+                    viewModel.addToCart(
+                        Compra(
+                            nombreProducto = producto.nombre,
+                            cantidad = 1,
+                            precio = producto.precio,
+                            imagenUrl = fullImageUrl,
+                            id = producto.id.toLong()
+                        )
                     )
-                    Icon(
-                        painter = painterResource(id = R.drawable.car),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .border(2.dp, Color.Blue, shape = CircleShape)
-                            .padding(3.dp)
-                    )
+                    navController.navigate(Rutas.Carrito.ruta)
                 }
-            }
+            )
         }
     }
 }

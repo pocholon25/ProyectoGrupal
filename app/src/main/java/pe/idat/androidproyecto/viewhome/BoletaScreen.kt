@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -22,7 +23,7 @@ import pe.idat.androidproyecto.AuthViewModel
 
 
 @Composable
-fun BoletaVentaScreen(navController: NavController,authViewModel: AuthViewModel) {
+fun BoletaVentaScreen(navController: NavController, authViewModel: AuthViewModel) {
     val modifier = Modifier.padding(horizontal = 16.dp)
     val ventaResponse by authViewModel.ventaResponse.collectAsState()
 
@@ -93,5 +94,16 @@ fun BoletaVentaScreen(navController: NavController,authViewModel: AuthViewModel)
                 fontWeight = FontWeight.Bold
             )
         }
+
+        // Agregar mensaje al final
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "PUEDES CONSULTAR TU ESTADO DEL PEDIDO CON NÚMERO DE VENTA",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            color = Color.Blue,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
     }
 }

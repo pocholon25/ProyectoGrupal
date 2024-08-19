@@ -97,7 +97,10 @@ class MainActivity : ComponentActivity() {
                                         coroutineScope.launch { drawerState.open() }
                                     },
                                     onAction1Click = {
-                                        navController.navigate(Rutas.Login.ruta)
+                                        authViewModel.logout()
+                                        navController.navigate(Rutas.Login.ruta) {
+                                            popUpTo(Rutas.Home.ruta) { inclusive = true }
+                                        }
                                     }
                                     ,
                                     onAction2Click = {

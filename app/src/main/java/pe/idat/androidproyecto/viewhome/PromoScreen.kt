@@ -33,32 +33,32 @@ import pe.idat.androidproyecto.model.promo
 fun PromoScreen(navController: NavController, viewModel: AuthViewModel) {
     val productos by viewModel.productos.collectAsState(emptyList())
     LaunchedEffect(Unit) {
-        viewModel.productsByCategory("Ver Mas")
+        viewModel.productsByCategory("Promocion")
     }
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = 8.dp), // Padding tenue para separar de los lados de la pantalla
+            .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.Top
     ) {
         Text(
             text = "PROMOCIONES",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp), // Padding vertical para el texto
+                .padding(vertical = 16.dp),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.SansSerif,
             color = Color.Black
         )
-        Spacer(modifier = Modifier.height(8.dp)) // Espacio entre el texto y la lista
+        Spacer(modifier = Modifier.height(8.dp))
         LazyGrid(
             items = productos,
             columns = 2,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp) // Padding tenue para separar de los lados de la pantalla
+                .padding(horizontal = 4.dp) 
         ) { promo ->
             val fullimageUrl = "http://10.0.2.2:8089/img/product_img/${promo.image}"
             ItemCard(
